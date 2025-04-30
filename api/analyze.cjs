@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       {
         headers: {
           ...formData.getHeaders(),
-          'ailabapi-api-key': 'YOUR_REAL_API_KEY_HERE'
+          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5'
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
