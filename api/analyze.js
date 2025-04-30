@@ -62,6 +62,7 @@ export default async function handler(req, res) {
       }
     );
 
+    console.log('✅ AILab response:', response.data);
     res.status(200).json(response.data);
   } catch (err) {
     if (err.response) {
