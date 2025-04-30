@@ -12,13 +12,13 @@
 <body>
   <h1>Upload a selfie for skin analysis</h1>
 
-  <!-- Image input for taking/uploading a photo -->
+  <!-- Image input -->
   <input type="file" id="imageInput" accept="image/*" capture="environment"><br>
 
-  <!-- Image preview -->
+  <!-- Preview -->
   <img id="preview" src="#" alt="Preview" />
 
-  <!-- Analyze button -->
+  <!-- Button -->
   <button id="analyzeBtn">Analyze</button>
 
   <!-- Result display -->
@@ -30,7 +30,6 @@
     const resultBox = document.getElementById('result');
     const analyzeBtn = document.getElementById('analyzeBtn');
 
-    // When user uploads an image, show preview
     imageInput.addEventListener('change', () => {
       const file = imageInput.files[0];
       if (!file) return;
@@ -43,7 +42,6 @@
       reader.readAsDataURL(file);
     });
 
-    // When user clicks Analyze
     analyzeBtn.addEventListener('click', async () => {
       const file = imageInput.files[0];
       if (!file) {
@@ -52,7 +50,7 @@
       }
 
       const formData = new FormData();
-      formData.append('image', file); // Attach the image to the form data
+      formData.append('image', file);
 
       resultBox.textContent = 'Analyzing...';
 
@@ -64,18 +62,22 @@
 
         const data = await res.json();
 
-        if (data.code === 200) {
+        if (data.error_code === 0 && data.result) {
+          const result = data.result;
+
           resultBox.innerHTML = `
             <p>✅ Analysis Complete:</p>
             <ul>
-              <li><strong>Acne:</strong> ${data.data.acne}</li>
-              <li><strong>Wrinkle:</strong> ${data.data.wrinkle}</li>
-              <li><strong>Oil:</strong> ${data.data.oil}</li>
-              <li><strong>Skin Type:</strong> ${data.data.skin_type}</li>
+              <li><strong>Skin Age:</strong> ${result.skin_age?.value}</li>
+              <li><strong>Acne Count:</strong> ${result.acne?.count}</li>
+              <li><strong>Blackhead Count:</strong> ${result.blackhead_count}</li>
+              <li><strong>Wrinkle Score (Right Eye):</strong> ${result.right_eye_wrinkle_info?.wrinkle_score}</li>
+              <li><strong>Skin Type:</strong> ${result.skin_type?.skin_type}</li>
+              <li><strong>Total Score:</strong> ${result.score_info?.total_score}</li>
             </ul>
           `;
         } else {
-          resultBox.textContent = '❌ Error: ' + (data.message || data.error_msg);
+          resultBox.textContent = '❌ Error: ' + (data.message || data.error_msg || 'Unknown response');
         }
       } catch (err) {
         resultBox.textContent = '❌ Error connecting to server.';
@@ -85,3 +87,4 @@
   </script>
 </body>
 </html>
+
