@@ -1,8 +1,10 @@
+import formidable from 'formidable';
+import fs from 'fs/promises';
+import sharp from 'sharp';
 import axios from 'axios';
 import FormData from 'form-data';
-import sharp from 'sharp';
 
-// Tell Vercel to disable body parsing so we can handle raw binary
+// Disable default body parser
 export const config = {
   api: {
     bodyParser: false,
@@ -15,41 +17,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Read the raw binary body (image uploaded)
-    const buffers = [];
-    for await (const chunk of req) {
-      buffers.push(chunk);
+    // Parse the incoming multipart/form-data
+    const form = new formidable.IncomingForm({ keepExtensions: true });
+
+    const { fields, files } = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        else resolve({ fields, files });
+      });
+    });
+
+    const uploadedFile = files.image;
+    if (!uploadedFile) {
+      return res.status(400).json({ message: 'No image uploaded' });
     }
-    const rawBuffer = Buffer.concat(buffers);
 
-    // Convert uploaded image to JPEG using sharp (required by AILab)
-    const jpegBuffer = await sharp(rawBuffer).jpeg().toBuffer();
+    // Read file from disk and convert to JPEG
+    const buffer = await fs.readFile(uploadedFile.filepath);
+    const jpegBuffer = await sharp(buffer).jpeg().toBuffer();
 
-    // Create multipart/form-data request
-    const formData = new FormData();
-    formData.append('image', jpegBuffer, {
-      filename: 'selfie.jpg',
+    // Create FormData to send to AILab
+    const apiForm = new FormData();
+    apiForm.append('image', jpegBuffer, {
+      filename: 'converted.jpg',
       contentType: 'image/jpeg',
     });
 
-    // Send the request to AILab
     const response = await axios.post(
       'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro',
-      formData,
+      apiForm,
       {
         headers: {
-          ...formData.getHeaders(),
-          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5', // replace if needed
+          ...apiForm.getHeaders(),
+          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5',
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
-        timeout: 20000, // 20 seconds
+        timeout: 20000,
       }
     );
 
-    // Success: send AILab's result back to frontend
     res.status(200).json(response.data);
-
   } catch (err) {
     if (err.response) {
       console.error('❌ AILab API error:', err.response.status, err.response.data);
@@ -62,4 +70,5 @@ export default async function handler(req, res) {
     }
   }
 }
+
 
