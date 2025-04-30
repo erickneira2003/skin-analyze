@@ -1,12 +1,18 @@
 // api/analyze.js
 
-const fs = require('fs/promises');
-const path = require('path');
-const os = require('os');
-const axios = require('axios');
-const FormData = require('form-data');
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import axios from 'axios';
+import FormData from 'form-data';
 
-module.exports = async function handler(req, res) {
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
+
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ message: 'Only POST allowed' });
     return;
@@ -34,7 +40,6 @@ module.exports = async function handler(req, res) {
     await fs.writeFile(tempPath, filePart.data);
     const fileBuffer = await fs.readFile(tempPath);
 
-    // ✅ Debug info
     console.log('📤 Sending image to AILab:', {
       filename: filePart.filename,
       contentType: filePart.contentType,
@@ -53,7 +58,7 @@ module.exports = async function handler(req, res) {
       {
         headers: {
           ...formData.getHeaders(),
-          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // 👈 IMPORTANT: Replace this
+          'ailabapi-api-key': 'YOUR_REAL_API_KEY_HERE'
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
@@ -75,10 +80,10 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ message: 'Unexpected error', error: err.message });
     }
   }
-};
+}
 
 function getBoundary(contentType) {
-  const match = contentType.match(/boundary=(.+)$/);
+  const match = contentType?.match(/boundary=(.+)$/);
   return match ? match[1] : null;
 }
 
