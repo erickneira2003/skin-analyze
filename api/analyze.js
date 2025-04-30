@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import axios from 'axios';
 import FormData from 'form-data';
 
-// Tell Vercel to disable default body parsing
+// Disable default body parsing in Vercel
 export const config = {
   api: {
     bodyParser: false,
@@ -17,25 +17,34 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ Use new Formidable v3 syntax (no "new", just a function call)
+    // Initialize formidable parser
     const form = formidable({
       keepExtensions: true,
       multiples: false,
     });
 
-    // ✅ Parse multipart/form-data using formidable
-    const [fields, files] = await form.parse(req);
-    const uploadedFile = files.image;
+    // Parse the multipart form data
+    const result = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        else resolve({ fields, files });
+      });
+    });
+
+    const uploadedFile = result.files.image;
+
+    // Log what was received
+    console.log('📷 Uploaded files:', result.files);
 
     if (!uploadedFile || !uploadedFile.filepath) {
       return res.status(400).json({ message: 'No image uploaded' });
     }
 
-    // ✅ Read image file and convert to JPEG
+    // Convert image to JPEG using sharp
     const buffer = await fs.readFile(uploadedFile.filepath);
     const jpegBuffer = await sharp(buffer).jpeg().toBuffer();
 
-    // ✅ Send image to AILab
+    // Send image to AILab
     const apiForm = new FormData();
     apiForm.append('image', jpegBuffer, {
       filename: 'converted.jpg',
@@ -56,6 +65,7 @@ export default async function handler(req, res) {
       }
     );
 
+    // Return result to frontend
     res.status(200).json(response.data);
   } catch (err) {
     if (err.response) {
@@ -69,6 +79,5 @@ export default async function handler(req, res) {
     }
   }
 }
-
 
 
