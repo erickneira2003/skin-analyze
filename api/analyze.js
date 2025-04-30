@@ -34,8 +34,14 @@ export default async function handler(req, res) {
 
     const tempPath = path.join(os.tmpdir(), filePart.filename);
     await fs.writeFile(tempPath, filePart.data);
-
     const fileBuffer = await fs.readFile(tempPath);
+
+    // ✅ Log file info before upload
+    console.log('📤 Sending image to AILab:', {
+      filename: filePart.filename,
+      contentType: filePart.contentType,
+      sizeInKB: Math.round(fileBuffer.length / 1024)
+    });
 
     const formData = new FormData();
     formData.append('image', fileBuffer, {
@@ -49,11 +55,13 @@ export default async function handler(req, res) {
       {
         headers: {
           ...formData.getHeaders(),
-          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // ✅ Cased header fix
-        }
+          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5'
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        timeout: 20000
       }
     );
-
 
     res.status(200).json(response.data);
   } catch (err) {
@@ -94,5 +102,8 @@ function parseMultipart(body, boundary) {
       });
     }
   }
+  return parts;
+}
+
   return parts;
 }
