@@ -1,123 +1,94 @@
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import axios from 'axios';
-import FormData from 'form-data';
-import sharp from 'sharp'; // To convert any image into JPEG
+// ✅ Import required packages
+import fs from 'fs/promises';      // Not used here, but good for debugging in local environments
+import path from 'path';           // Optional helper for paths
+import os from 'os';               // Optional helper for temp folder access
+import axios from 'axios';         // Used to send the image to the AILab API
+import FormData from 'form-data';  // Builds the request body for sending the image
+import sharp from 'sharp';         // Converts any image format into JPEG
 
+// ✅ Tell Vercel to NOT parse the request body (we handle raw binary ourselves)
 export const config = {
   api: {
-    bodyParser: false // Let us manually read the body (for file uploads)
+    bodyParser: false
   }
 };
 
+// ✅ Main function that runs when someone sends a POST request to /api/analyze
 export default async function handler(req, res) {
+  // Only allow POST requests (image uploads)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Only POST requests allowed' });
   }
 
   try {
-    // Get the boundary string from the content-type (needed to parse multipart manually)
+    // ✅ Get the "boundary" string used in the multipart form upload
     const boundary = getBoundary(req.headers['content-type']);
     if (!boundary) {
       return res.status(400).json({ message: 'Invalid content-type boundary' });
     }
 
-    // Collect the binary data of the entire request (image + headers)
+    // ✅ Read the full request body (raw binary data)
     const buffers = [];
     for await (const chunk of req) {
-      buffers.push(chunk);
+      buffers.push(chunk); // Collect each chunk of data
     }
-    const body = Buffer.concat(buffers);
+    const body = Buffer.concat(buffers); // Merge chunks into one buffer
 
-    // Parse the multipart/form-data manually
+    // ✅ Parse the form data using our custom parser
     const parts = parseMultipart(body, boundary);
-    const filePart = parts.find(p => p.filename); // Get the file part only
 
+    // ✅ Look for the uploaded file among the form parts
+    const filePart = parts.find(p => p.filename);
     if (!filePart) {
       return res.status(400).json({ message: 'Image not found in request' });
     }
 
-    // Debug: Show file info before conversion
+    // ✅ Print info about the uploaded image to help debugging
     console.log('📤 Preparing to send image to AILab:', {
       filename: filePart.filename,
       contentType: filePart.contentType,
       sizeInKB: Math.round(filePart.data.length / 1024),
     });
 
-    // ✅ Convert image to JPEG using sharp to ensure AILab accepts it
+    // ✅ Convert image to JPEG — required by AILab (even if it's already JPEG)
     const jpegBuffer = await sharp(filePart.data).jpeg().toBuffer();
 
-    // Create a form-data body to send to AILab
+    // ✅ Build a new form-data object to send to AILab
     const formData = new FormData();
     formData.append('image', jpegBuffer, {
       filename: 'converted.jpg',
       contentType: 'image/jpeg'
     });
 
-    // Send to AILab API
+    // ✅ Send image to AILab API with your API key
     const response = await axios.post(
       'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro',
       formData,
       {
         headers: {
-          ...formData.getHeaders(),
-          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5'
+          ...formData.getHeaders(), // Includes boundary and content-type
+          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // ⛔ Replace with your real key
         },
-        maxBodyLength: Infinity,
+        maxBodyLength: Infinity,       // Allow big images
         maxContentLength: Infinity,
-        timeout: 20000
+        timeout: 20000                 // 20 seconds timeout
       }
     );
 
-    // Return the result from AILab to frontend
+    // ✅ Send AILab's successful response back to your frontend
     res.status(200).json(response.data);
 
   } catch (err) {
-    // Catch and report AILab errors or internal errors
+    // ✅ If AILab responded with an error, forward it to the frontend
     if (err.response) {
       console.error('❌ AILab API error:', err.response.status, err.response.data);
       res.status(err.response.status).json({
-        message: 'AILab API error',
-        status: err.response.status,
-        data: err.response.data
+        error_msg: err.response.data?.error_msg || err.response.data?.message || 'Unknown AILab error'
       });
     } else {
+      // ❌ Catch unexpected internal errors (file system, parsing, etc.)
       console.error('❌ Unexpected error:', err.message);
-      res.status(500).json({ message: 'Unexpected error', error: err.message });
+      res.status(500).json({ error_msg: err.message || 'Unknown error' });
     }
   }
-}
-
-// ✅ Extracts the multipart boundary from the Content-Type header
-function getBoundary(contentType) {
-  const match = contentType?.match(/boundary=(.+)$/);
-  return match ? match[1] : null;
-}
-
-// ✅ Parses multipart/form-data and extracts files safely
-function parseMultipart(body, boundary) {
-  const parts = [];
-  const chunks = body.toString('latin1').split(`--${boundary}`); // Use latin1 for binary-safe split
-
-  for (let chunk of chunks) {
-    if (chunk.includes('Content-Disposition')) {
-      const [header, ...rest] = chunk.split('\r\n\r\n');
-      const nameMatch = header.match(/name="(.+?)"/);
-      const filenameMatch = header.match(/filename="(.+?)"/);
-      const contentTypeMatch = header.match(/Content-Type: (.+)/);
-
-      const rawBody = rest.join('\r\n\r\n');
-      const data = Buffer.from(rawBody, 'latin1'); // ✅ FIXED: binary-safe buffer creation
-
-      parts.push({
-        name: nameMatch?.[1],
-        filename: filenameMatch?.[1],
-        contentType: contentTypeMatch?.[1],
-        data
-      });
-    }
-  }
-
-  return parts;
 }
