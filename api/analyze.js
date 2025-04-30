@@ -49,15 +49,24 @@ export default async function handler(req, res) {
       {
         headers: {
           ...formData.getHeaders(),
-          'ailab-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // 🔐 Replace this
+          'ailab-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // ✅ Your real API key
         }
       }
     );
 
     res.status(200).json(response.data);
   } catch (err) {
-    console.error('❌ AILab API error:', err.response?.data || err.message);
-    res.status(500).json({ message: 'Upload or API request failed', error: err.message });
+    if (err.response) {
+      console.error('❌ AILab API error:', err.response.status, err.response.data);
+      res.status(err.response.status).json({
+        message: 'AILab API error',
+        status: err.response.status,
+        data: err.response.data
+      });
+    } else {
+      console.error('❌ Unexpected error:', err.message);
+      res.status(500).json({ message: 'Unexpected error', error: err.message });
+    }
   }
 }
 
@@ -86,4 +95,3 @@ function parseMultipart(body, boundary) {
   }
   return parts;
 }
-
