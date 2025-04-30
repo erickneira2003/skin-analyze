@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       {
         headers: {
           ...formData.getHeaders(),
-          'Ailab-Api-Key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // ✅ Cased header fix
+          'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5' // ✅ Cased header fix
         }
       }
     );
