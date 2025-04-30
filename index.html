@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Skin Analyzer</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    #preview { display: none; margin-top: 1rem; max-width: 300px; }
+    #result { margin-top: 1rem; font-weight: bold; color: green; }
+  </style>
+</head>
+<body>
+  <h1>Upload a selfie for skin analysis</h1>
+
+  <!-- Image input for taking/uploading a photo -->
+  <input type="file" id="imageInput" accept="image/*" capture="environment"><br>
+
+  <!-- Image preview -->
+  <img id="preview" src="#" alt="Preview" />
+
+  <!-- Analyze button -->
+  <button id="analyzeBtn">Analyze</button>
+
+  <!-- Result display -->
+  <div id="result"></div>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const preview = document.getElementById('preview');
+    const resultBox = document.getElementById('result');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+
+    // When user uploads an image, show preview
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // When user clicks Analyze
+    analyzeBtn.addEventListener('click', async () => {
+      const file = imageInput.files[0];
+      if (!file) {
+        alert('Please select an image.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file); // Attach the image to the form data
+
+      resultBox.textContent = 'Analyzing...';
+
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.code === 200) {
+          resultBox.innerHTML = `
+            <p>✅ Analysis Complete:</p>
+            <ul>
+              <li><strong>Acne:</strong> ${data.data.acne}</li>
+              <li><strong>Wrinkle:</strong> ${data.data.wrinkle}</li>
+              <li><strong>Oil:</strong> ${data.data.oil}</li>
+              <li><strong>Skin Type:</strong> ${data.data.skin_type}</li>
+            </ul>
+          `;
+        } else {
+          resultBox.textContent = '❌ Error: ' + (data.message || data.error_msg);
+        }
+      } catch (err) {
+        resultBox.textContent = '❌ Error connecting to server.';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
