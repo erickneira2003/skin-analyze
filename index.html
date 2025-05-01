@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>AI Skin Analyzer</title>
   <style>
+    /* Basic styling for layout */
     body { font-family: sans-serif; text-align: center; padding: 2rem; }
     #preview { display: none; margin-top: 1rem; max-width: 300px; }
     #result { margin-top: 1rem; font-weight: bold; color: green; }
@@ -12,59 +13,67 @@
 <body>
   <h1>Upload a selfie for skin analysis</h1>
 
-  <!-- Image input -->
+  <!-- Input field to select or take a photo -->
   <input type="file" id="imageInput" accept="image/*" capture="environment"><br>
 
-  <!-- Preview -->
+ <!-- Preview image area -->
   <img id="preview" src="#" alt="Preview" />
 
-  <!-- Button -->
+  <!-- Button to trigger the analysis -->
   <button id="analyzeBtn">Analyze</button>
 
-  <!-- Result display -->
+ <!-- Div where results will be shown -->
   <div id="result"></div>
 
   <script>
+    // Get HTML elements
     const imageInput = document.getElementById('imageInput');
     const preview = document.getElementById('preview');
     const resultBox = document.getElementById('result');
     const analyzeBtn = document.getElementById('analyzeBtn');
 
+    // When user selects an image, show a preview
     imageInput.addEventListener('change', () => {
-      const file = imageInput.files[0];
+      const file = imageInput.files[0]; // Get selected file
       if (!file) return;
 
-      const reader = new FileReader();
+      const reader = new FileReader(); // Create file reader
       reader.onload = (e) => {
-        preview.src = e.target.result;
-        preview.style.display = 'block';
+        preview.src = e.target.result; // Set preview source
+        preview.style.display = 'block'; // Show preview
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(file); // Read file as base64 for preview
     });
 
+    // When "Analyze" button is clicked
     analyzeBtn.addEventListener('click', async () => {
-      const file = imageInput.files[0];
+      const file = imageInput.files[0]; // Get uploaded image file
       if (!file) {
-        alert('Please select an image.');
+        alert('Please select an image.'); // Warn if no image
         return;
       }
 
+      // Prepare form data to send to backend
       const formData = new FormData();
       formData.append('image', file);
 
+      // Show loading message
       resultBox.textContent = 'Analyzing...';
 
       try {
+        // Send image to backend API (/api/analyze)
         const res = await fetch('/api/analyze', {
           method: 'POST',
           body: formData
         });
 
-        const data = await res.json();
+        const data = await res.json(); // Parse JSON response
 
+        // ✅ If API returns valid results
         if (data.error_code === 0 && data.result) {
           const result = data.result;
 
+// Insert text results into page
 resultBox.innerHTML = `
   <p>✅ Analysis Complete:</p>
   <ul>
@@ -88,7 +97,7 @@ resultBox.innerHTML = `
   </ul>
 `;
 
-// ✅ Add images (if AILab sent them)
+// ✅ Try to display maps if AILab returns any base64 images
 const maps = {
   red_area_map: "Red Area Map",
   brown_area_map: "Brown Area Map",
@@ -100,6 +109,7 @@ const maps = {
   roi_outline_map: "Region of Interest Map"
 };
 
+// For each available map in the result, display it
 for (const key in maps) {
   if (result[key]) {
     const label = `<p><strong>${maps[key]}</strong></p>`;
@@ -110,9 +120,11 @@ for (const key in maps) {
 
          
         } else {
+          // ❌ Error message if no result
           resultBox.textContent = '❌ Error: ' + (data.message || data.error_msg || 'Unknown response');
         }
       } catch (err) {
+        // ❌ Error if server is down or fetch fails
         resultBox.textContent = '❌ Error connecting to server.';
         console.error(err);
       }
