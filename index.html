@@ -6,8 +6,7 @@
   <style>
     body { font-family: sans-serif; text-align: center; padding: 2rem; }
     #preview { display: none; margin-top: 1rem; max-width: 300px; }
-    #result img { max-width: 100%; margin-top: 1rem; }
-    #result { margin-top: 1rem; font-weight: bold; color: green; text-align: left; display: inline-block; max-width: 700px; }
+    #result { margin-top: 1rem; font-weight: bold; color: green; }
   </style>
 </head>
 <body>
@@ -64,51 +63,29 @@
         const data = await res.json();
 
         if (data.error_code === 0 && data.result) {
-          const r = data.result;
+          const result = data.result;
 
           resultBox.innerHTML = `
             <p>✅ Analysis Complete:</p>
             <ul>
-              <li><strong>Skin Age:</strong> ${r.skin_age?.value}</li>
-              <li><strong>Skin Type:</strong> ${r.skin_type?.skin_type}</li>
-              <li><strong>Skin Tone (ITA):</strong> ${r.skintone_ita?.ITA}</li>
-              <li><strong>Oil Intensity – T-Zone:</strong> ${r.oily_intensity?.t_zone?.oily_score}</li>
-              <li><strong>Water Severity:</strong> ${r.water?.water_severity}</li>
-              <li><strong>Rough Area Severity:</strong> ${r.rough?.rough_severity}</li>
-              <li><strong>Wrinkles – Forehead:</strong> ${r.forehead_wrinkle_info?.wrinkle_score}</li>
-              <li><strong>Wrinkles – Right Eye:</strong> ${r.right_eye_wrinkle_info?.wrinkle_score}</li>
-              <li><strong>Wrinkles – Glabella:</strong> ${r.glabella_wrinkle_info?.wrinkle_score}</li>
-              <li><strong>Crow's Feet Severity (Right):</strong> ${r.right_crowsfeet_wrinkle_info?.wrinkle_severity_level}</li>
-              <li><strong>Dark Circle Severity:</strong> ${r.dark_circle_severity?.value}</li>
-              <li><strong>Eye Bags (Eye Pouch Value):</strong> ${r.eye_pouch?.value}</li>
-              <li><strong>Enlarged Pores – Forehead:</strong> ${r.enlarged_pore_count?.forehead_count}</li>
-              <li><strong>Blackhead Count:</strong> ${r.blackhead_count}</li>
-              <li><strong>Acne Count:</strong> ${r.acne?.count}</li>
-              <li><strong>Mole Count:</strong> ${r.mole?.count}</li>
-              <li><strong>Brown Spots Count:</strong> ${r.brown_spot?.count}</li>
-              <li><strong>Closed Comedones Count:</strong> ${r.closed_comedones?.count}</li>
-              <li><strong>Sensitivity Type:</strong> ${r.sensitivity_type_v1}</li>
-              <li><strong>Total Score:</strong> ${r.score_info?.total_score}</li>
+              <li><strong>Skin Age:</strong> ${result.skin_age?.value}</li>
+              <li><strong>Acne Count:</strong> ${result.acne?.count}</li>
+              <li><strong>Blackhead Count:</strong> ${result.blackhead_count}</li>
+              <li><strong>Wrinkle Score (Right Eye):</strong> ${result.right_eye_wrinkle_info?.wrinkle_score}</li>
+              <li><strong>Skin Type:</strong> ${result.skin_type?.skin_type}</li>
+              <li><strong>Total Score:</strong> ${result.score_info?.total_score}</li>
             </ul>
           `;
-
-          // Optional base64 images (only if AILab returns them)
-          const mapNames = [
-            "red_area_map", "brown_area_map", "texture_enhanced_pores_map",
-            "texture_enhanced_blackheads_map", "texture_enhanced_lines_map",
-            "roi_outline_map", "rough_area_map", "water_area_map"
-          ];
-
-          mapNames.forEach(map => {
-            if (r[map]) {
-              const img = document.createElement("img");
-              img.src = "data:image/jpeg;base64," + r[map];
-              img.alt = map.replace(/_/g, ' ');
-              resultBox.appendChild(img);
-            }
-          });
-
         } else {
-          resultBox.textContent = '❌
+          resultBox.textContent = '❌ Error: ' + (data.message || data.error_msg || 'Unknown response');
+        }
+      } catch (err) {
+        resultBox.textContent = '❌ Error connecting to server.';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
 
 
