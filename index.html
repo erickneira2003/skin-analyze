@@ -74,8 +74,31 @@
               <li><strong>Wrinkle Score (Right Eye):</strong> ${result.right_eye_wrinkle_info?.wrinkle_score}</li>
               <li><strong>Skin Type:</strong> ${result.skin_type?.skin_type}</li>
               <li><strong>Total Score:</strong> ${result.score_info?.total_score}</li>
-            </ul>
-          `;
+               <li><strong>Oil Intensity (T-zone):</strong> ${result.oily_intensity?.t_zone?.oily_score}</li>
+              <li><strong>Water Severity:</strong> ${result.water?.water_severity}</li>
+              <li><strong>Roughness Severity:</strong> ${result.rough?.rough_severity}</li>
+              <li><strong>Eye Pouch:</strong> ${result.eye_pouch?.value}</li>
+              <li><strong>Dark Circle Severity:</strong> ${result.dark_circle_severity?.value}</li>
+              <li><strong>Forehead Wrinkle Score:</strong> ${result.forehead_wrinkle_info?.wrinkle_score}</li>
+              <li><strong>Glabella Wrinkle Score:</strong> ${result.glabella_wrinkle_info?.wrinkle_score}</li>
+              <li><strong>Crow’s Feet Score (Right):</strong> ${result.right_crowsfeet_wrinkle_info?.wrinkle_score}</li>
+              <li><strong>Enlarged Pores (Forehead):</strong> ${result.enlarged_pore_count?.forehead_count}</li>
+              <li><strong>Brown Spot Count:</strong> ${result.brown_spot?.count}</li>
+              <li><strong>Closed Comedones Count:</strong> ${result.closed_comedones?.count}</li>
+              <li><strong>Skin Tone (ITA):</strong> ${result.skintone_ita?.ITA}</li>
+              <li><strong>Skin Hue (HA):</strong> ${result.skin_hue_ha?.HA}</li>
+              <li><strong>Sensitivity Type:</strong> ${result.sensitivity_type_v1}</li>
+              <li><strong>Melanin Score:</strong> ${result.score_info?.melanin_score}</li>
+              <li><strong>Pores Score:</strong> ${result.score_info?.pores_score}</li>
+              <li><strong>Wrinkle Score:</strong> ${result.score_info?.wrinkle_score}</li>
+              <li><strong>Blackhead Score:</strong> ${result.score_info?.blackhead_score}</li>
+              <li><strong>Acne Score:</strong> ${result.score_info?.acne_score}</li>
+              <li><strong>Roughness Score:</strong> ${result.score_info?.rough_score}</li>
+              <li><strong>Hydration Score:</strong> ${result.score_info?.water_score}</li>
+              <li><strong>Sensitivity Score:</strong> ${result.score_info?.sensitivity_score}</li>
+  </ul>
+`;
+         
         } else {
           resultBox.textContent = '❌ Error: ' + (data.message || data.error_msg || 'Unknown response');
         }
