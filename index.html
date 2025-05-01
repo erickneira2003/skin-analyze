@@ -98,9 +98,10 @@ resultBox.innerHTML = `
 `;
 
 // ✅ Try to display maps if AILab returns any base64 images
+const faceMaps = result.face_maps || {};
 const maps = {
-  red_area_map: "Red Area Map",
-  brown_area_map: "Brown Area Map",
+  brown_area: "Brown Area Map",
+  red_area: "Red Area Map",
   texture_enhanced_pores_map: "Pore Map",
   texture_enhanced_blackheads_map: "Blackhead Map",
   texture_enhanced_lines_map: "Wrinkle Map",
@@ -109,14 +110,16 @@ const maps = {
   roi_outline_map: "Region of Interest Map"
 };
 
-// For each available map in the result, display it
 for (const key in maps) {
-  if (result[key]) {
+  // check face_maps first, then fallback to root-level (for older formats)
+  const base64 = faceMaps[key] || result[key];
+  if (base64) {
     const label = `<p><strong>${maps[key]}</strong></p>`;
-    const image = `<img src="data:image/jpeg;base64,${result[key]}" alt="${maps[key]}" style="max-width:100%; margin-bottom: 20px;" />`;
+    const image = `<img src="data:image/jpeg;base64,${base64}" alt="${maps[key]}" style="max-width:100%; margin-bottom: 20px;" />`;
     resultBox.innerHTML += label + image;
   }
 }
+
 
          
         } else {
