@@ -1,24 +1,30 @@
-import formidable from 'formidable';
-import fs from 'fs/promises';
-import sharp from 'sharp';
-import axios from 'axios';
-import FormData from 'form-data';
+// Import dependencies
+import formidable from 'formidable';   // For parsing multipart/form-data (file uploads)
+import fs from 'fs/promises';          // Node.js promises-based file system API
+import sharp from 'sharp';             // Image processing library (we use it to ensure JPEG format)
+import axios from 'axios';             // To make HTTP requests to AILab Tools API
+import FormData from 'form-data';      // To build form-data for API requests
 
+// Vercel config: tell Vercel not to parse the body (formidable will do it)
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
+// Main function: handles /api/analyze requests
 export default async function handler(req, res) {
+  // Only allow POST requests — all others are rejected
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Only POST requests allowed' });
   }
 
   try {
+        // Initialize formidable to parse uploaded file
+
     const form = formidable({
-      keepExtensions: true,
-      multiples: false,
+      keepExtensions: true, // Keep file extension (like .jpg)
+      multiples: false, // Only allow one file upload
     });
 
     const result = await new Promise((resolve, reject) => {
