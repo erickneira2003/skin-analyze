@@ -48,6 +48,8 @@ export default async function handler(req, res) {
       contentType: 'image/jpeg',
     });
 
+    apiForm.append('return_maps', 'red_area,brown_area,texture_enhanced_pores,texture_enhanced_blackheads,texture_enhanced_lines,water_area,rough_area,roi_outline_map');
+
     const response = await axios.post(
       'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro',
       apiForm,
