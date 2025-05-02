@@ -21,12 +21,12 @@ export default async function handler(req, res) {
 
   try {
         // Initialize formidable to parse uploaded file
-
     const form = formidable({
       keepExtensions: true, // Keep file extension (like .jpg)
       multiples: false, // Only allow one file upload
     });
 
+    // Parse the incoming request to extract file and any form fields
     const result = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) reject(err);
@@ -41,44 +41,55 @@ export default async function handler(req, res) {
 
     console.log('📷 Uploaded file:', uploadedFile);
 
+    // Check if the file was successfully uploaded
     if (!uploadedFile || !uploadedFile.filepath) {
       return res.status(400).json({ message: 'No image uploaded' });
     }
 
+    // Read file content from temporary path on the server
     const buffer = await fs.readFile(uploadedFile.filepath);
+
+    //Convert image to JPEG format (to comply with AILab API format)
     const jpegBuffer = await sharp(buffer).jpeg().toBuffer();
 
+    // Prepare form data to send to AILab
     const apiForm = new FormData();
     apiForm.append('image', jpegBuffer, {
       filename: 'converted.jpg',
       contentType: 'image/jpeg',
     });
-
+    
+    // Request maps to be returned (optional but useful)
     apiForm.append('return_maps', 'red_area,brown_area,texture_enhanced_pores,texture_enhanced_blackheads,texture_enhanced_lines,water_area,rough_area,roi_outline_map');
 
+    // Send request to AILab API
     const response = await axios.post(
       'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro',
       apiForm,
       {
         headers: {
-          ...apiForm.getHeaders(),
+          ...apiForm.getHeaders(), // Include correct Content-Type and boundaries
           'ailabapi-api-key': 'ey7mV5aEppSHoWqFBqkRbQJwa0DjA6ozxhKG1TMz8ZluSOEV22x08WruKAbIdZU5',
         },
-        maxBodyLength: Infinity,
+        maxBodyLength: Infinity, // Allow large file uploads
         maxContentLength: Infinity,
-        timeout: 20000,
+        timeout: 20000,          // Wait up to 20 seconds for response
       }
     );
 
     console.log('✅ AILab response:', response.data);
+    // Return AILab's JSON response to the frontend
     res.status(200).json(response.data);
+    
   } catch (err) {
+    // Handle AILab-specific errors (when response is available)
     if (err.response) {
       console.error('❌ AILab API error:', err.response.status, err.response.data);
       res.status(err.response.status).json({
         error_msg: err.response.data?.error_msg || err.response.data?.message || 'Unknown AILab error',
       });
     } else {
+      // Handle generic unexpected errors
       console.error('❌ Unexpected error:', err.message);
       res.status(500).json({ error_msg: err.message || 'Internal server error' });
     }
